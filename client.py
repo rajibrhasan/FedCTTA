@@ -27,7 +27,7 @@ class Client(object):
         self.temperature = cfg.MISC.TEMP
 
         self.device = device
-        self.class_probs_ema = 1 / self.cfg.MODEL.NUM_CLASSES * torch.ones(self.cfg.MODEL.NUM_CLASSE).to(self.device)
+        self.class_probs_ema = 1 / self.cfg.MODEL.NUM_CLASSES * torch.ones(self.cfg.MODEL.NUM_CLASSES).to(self.device)
         self.pvec = None
         self.local_features = None
         self.weights = None
