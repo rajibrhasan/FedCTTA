@@ -63,7 +63,7 @@ def main(severity, device):
             for i, client in enumerate(clients):
                 weights[i] = client.weights
             
-            weights = (weights - weights.min()) / (weights.max() - weights.min())
+            weights = weights.softmax(0)
             print(weights)
     
             w_avg = FedAvg(w_locals, weights)
