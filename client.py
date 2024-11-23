@@ -92,7 +92,7 @@ class Client(object):
 
         # calculate the consistency loss
         if self.use_consistency:
-            outputs_aug = self.model(self.tta_transform(x[~mask]))
+            outputs_aug = self.model(self.tta_transform(x.to(self.device)[~mask]))
             loss += (self.symmetric_cross_entropy(x=outputs_aug, x_ema=outputs[~mask]) * weights[~mask]).sum() / self.batch_size
         
         self.model = ema_update_model(
