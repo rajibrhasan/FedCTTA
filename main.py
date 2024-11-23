@@ -62,6 +62,7 @@ def main(severity, device):
             weights = torch.zeros(len(clients))
             for i, client in enumerate(clients):
                 weights[i] = client.weights
+            print(weights)
     
             # w_avg = FedAvg(w_locals, weights)
             # for client in clients:
