@@ -44,12 +44,15 @@ class Client(object):
             weights_div = (weights_div - weights_div.min()) / (weights_div.max() - weights_div.min())
             # calculate certainty based weight
             weights_cert = - softmax_entropy(outputs)
+            print(weights_cert)
             weights_cert = (weights_cert - weights_cert.min()) / (weights_cert.max() - weights_cert.min())
+            print(weights_cert)
+
             # calculate the final weights
             weights = torch.exp(weights_div * weights_cert / self.cfg.MISC.TEMP)
             self.class_probs_ema = self.momentum_probs * self.class_probs_ema + (1 - self.momentum_probs) * outputs.softmax(1).mean(0)
+
             self.weights = weights.mean(0).item()
-            print(self.weights)
         
         if self.cfg.MODEL.ADAPTATION != 'source':
             loss = softmax_entropy(outputs).mean(0)
