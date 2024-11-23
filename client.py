@@ -45,6 +45,7 @@ class Client(object):
             # calculate certainty based weight
             weights_cert = - (-(outputs.softmax(1) * outputs.log_softmax(1)).sum(1))
             weights_cert = (weights_cert - weights_cert.min()) / (weights_cert.max() - weights_cert.min())
+            print(weights_cert)
 
             # calculate the final weights
             weights = torch.exp(weights_div * weights_cert / self.cfg.MISC.TEMP)

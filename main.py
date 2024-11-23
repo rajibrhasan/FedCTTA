@@ -62,7 +62,6 @@ def main(severity, device):
             weights = torch.zeros(len(clients))
             for i, client in enumerate(clients):
                 weights[i] = client.weights
-            print(f'Weights: {weights}')
             w_avg = FedAvg(w_locals, weights)
             for client in clients:
                 client.set_state_dict(deepcopy(w_avg))
