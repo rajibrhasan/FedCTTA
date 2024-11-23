@@ -28,7 +28,6 @@ class Client(object):
         self.momentum_probs = cfg.ROID.MOMENTUM_PROBS
         self.temperature = cfg.ROID.TEMPERATURE
         self.batch_size = cfg.MISC.BATCH_SIZE
-        self.class_probs_ema = 1 / self.num_classes * torch.ones(self.num_classes).to(self.device)
         self.tta_transform = get_tta_transforms(self.img_size, padding_mode="reflect", cotta_augs=False)
 
         # setup loss functions
