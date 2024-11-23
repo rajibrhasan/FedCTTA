@@ -68,7 +68,7 @@ def main(severity, device):
 
     acc = 0
     for client in clients:
-        client_acc = sum(client.correct_preds_before_adapt) / sum(client.total_preds)*100
+        client_acc = sum(client.correct_preds) / sum(client.total_preds)*100
         acc += client_acc
         print(f'{client.name} accuracy: {client_acc: 0.3f}')
 
