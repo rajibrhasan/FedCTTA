@@ -1,5 +1,5 @@
 MODEL:
-  ARCH: "Standard"            # Model architecture: 'Standard', 'ResNet', etc.
+  ARCH: "Modas2021PRIMEResNet18"            # Model architecture: 'Standard', 'ResNet', etc.
   NUM_CLASSES: 10             # Number of classes in the dataset
 
 CORRUPTION:
