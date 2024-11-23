@@ -62,7 +62,7 @@ class Client(object):
         self.y = y
         self.model.to(self.device)
 
-        outputs = self.model(x)
+        outputs = self.model(x.to(self.device))
 
         if self.use_weighting:
             with torch.no_grad():
