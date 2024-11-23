@@ -38,6 +38,7 @@ class Client(object):
         self.y = y
         self.model.to(self.device)
         outputs = self.model(self.x.to(self.device))
+        print('Outputs: ', outputs)
 
         if self.cfg.MODEL.ADAPTATION == 'roid':
             weights_div = 1 - F.cosine_similarity(self.class_probs_ema.unsqueeze(dim=0), outputs.softmax(1), dim=1)
