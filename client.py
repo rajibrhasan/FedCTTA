@@ -6,14 +6,35 @@ from torch import nn, optim
 import torch.nn.functional as F
 from sklearn.decomposition import PCA
 from fed_utils import ema_update_model
-from losses import symmetric_cross_entropy, softmax_entropy_ema, softmax_entropy
+from losses import symmetric_cross_entropy, softmax_entropy_ema, softmax_entropy, Entropy, SymmetricCrossEntropy, SoftLikelihoodRatio
+from transforms_cotta import get_tta_transforms
+
+@torch.no_grad()
+def update_model_probs(x_ema, x, momentum=0.9):
+    return momentum * x_ema + (1 - momentum) * x
 
 class Client(object):
     def __init__(self, name, model, cfg, device):
         self.cfg = cfg
         self.name = name 
-        self.src_model = deepcopy(model)
         self.model = deepcopy(model)
+
+        self.img_size = (32, 32) if "cifar" in cfg.CORRUPTION.DATASET else (224, 224)
+        self.num_classes = cfg.MODEL.NUM_CLASSES
+        self.use_weighting = cfg.ROID.USE_WEIGHTING
+        self.use_prior_correction = cfg.ROID.USE_PRIOR_CORRECTION
+        self.use_consistency = cfg.ROID.USE_CONSISTENCY
+        self.momentum_src = cfg.ROID.MOMENTUM_SRC
+        self.momentum_probs = cfg.ROID.MOMENTUM_PROBS
+        self.temperature = cfg.ROID.TEMPERATURE
+        self.batch_size = cfg.MISC.BATCH_SIZE
+        self.class_probs_ema = 1 / self.num_classes * torch.ones(self.num_classes).to(self.device)
+        self.tta_transform = get_tta_transforms(self.img_size, padding_mode="reflect", cotta_augs=False)
+
+        # setup loss functions
+        self.slr = SoftLikelihoodRatio()
+        self.symmetric_cross_entropy = SymmetricCrossEntropy()
+        self.softmax_entropy = Entropy()  # not used as loss
 
         self.configure_model()
         self.params, param_names = self.collect_params()
@@ -32,33 +53,62 @@ class Client(object):
         self.local_features = None
         self.weights = None
 
+        self.src_model = deepcopy(self.model).cpu()
+        for param in self.src_model.parameters():
+            param.detach_()
+
 
     def adapt(self, x, y):
         self.x = x
         self.y = y
         self.model.to(self.device)
-        outputs = self.model(self.x.to(self.device))
 
-        if self.cfg.MODEL.ADAPTATION == 'roid':
-            weights_div = 1 - F.cosine_similarity(self.class_probs_ema.unsqueeze(dim=0), outputs.softmax(1), dim=1)
-            weights_div = (weights_div - weights_div.min()) / (weights_div.max() - weights_div.min())
-            # print('Div: ', weights_div)
-            # calculate certainty based weight
-            weights_cert = - (-(outputs.softmax(1) * outputs.log_softmax(1)).sum(1))
-            # print('Cert: ', weights_cert)
-            weights_cert = (weights_cert - weights_cert.min()) / (weights_cert.max() - weights_cert.min())
+        outputs = self.model(x)
 
-            # calculate the final weights
-            weights = torch.exp(weights_div * weights_cert / self.cfg.MISC.TEMP)
-            self.class_probs_ema = self.momentum_probs * self.class_probs_ema + (1 - self.momentum_probs) * outputs.softmax(1).mean(0)
+        if self.use_weighting:
+            with torch.no_grad():
+                # calculate diversity based weight
+                weights_div = 1 - F.cosine_similarity(self.class_probs_ema.unsqueeze(dim=0), outputs.softmax(1), dim=1)
+                weights_div = (weights_div - weights_div.min()) / (weights_div.max() - weights_div.min())
+                mask = weights_div < weights_div.mean()
 
-            self.weights = weights.mean(0).item()
+                # calculate certainty based weight
+                weights_cert = - self.softmax_entropy(logits=outputs)
+                weights_cert = (weights_cert - weights_cert.min()) / (weights_cert.max() - weights_cert.min())
+
+                # calculate the final weights
+                weights = torch.exp(weights_div * weights_cert / self.temperature)
+                weights[mask] = 0.
+
+                self.class_probs_ema = update_model_probs(x_ema=self.class_probs_ema, x=outputs.softmax(1).mean(0), momentum=self.momentum_probs)
+
+        # calculate the soft likelihood ratio loss
+        loss_out = self.slr(logits=outputs)
+
+        # weight the loss
+        if self.use_weighting:
+            loss_out = loss_out * weights
+            loss_out = loss_out[~mask]
+        loss = loss_out.sum() / self.batch_size
+
+        # calculate the consistency loss
+        if self.use_consistency:
+            outputs_aug = self.model(self.tta_transform(x[~mask]))
+            loss += (self.symmetric_cross_entropy(x=outputs_aug, x_ema=outputs[~mask]) * weights[~mask]).sum() / self.batch_size
         
-        if self.cfg.MODEL.ADAPTATION != 'source':
-            loss = softmax_entropy(outputs).mean(0)
-            loss.backward()
-            self.optimizer.step()
-            self.optimizer.zero_grad()
+        self.model = ema_update_model(
+            model_to_update=self.model,
+            model_to_merge=self.src_model,
+            momentum=self.momentum_src,
+            device=self.device
+        )
+
+        with torch.no_grad():
+            if self.use_prior_correction:
+                prior = outputs.softmax(1).mean(0)
+                smooth = max(1 / outputs.shape[0], 1 / outputs.shape[1]) / torch.max(prior)
+                smoothed_prior = (prior + smooth) / (1 + smooth * outputs.shape[1])
+                outputs *= smoothed_prior
 
         self.model.to('cpu')
         _, predicted = torch.max(outputs, 1)
@@ -89,7 +139,7 @@ class Client(object):
     def configure_model(self):
         """Configure model."""
         # self.model.train()
-        self.model.train()  # eval mode to avoid stochastic depth in swin. test-time normalization is still applied
+        self.model.eval()  # eval mode to avoid stochastic depth in swin. test-time normalization is still applied
         # disable grad, to (re-)enable only what we update
         self.model.requires_grad_(False)
         # enable all trainable

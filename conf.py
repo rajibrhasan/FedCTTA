@@ -102,6 +102,15 @@ _C.MISC.LOG_DEST = 'log.txt'
 _C.MISC.LOG_TIME = ''
 _C.MISC.KAGGLE = False
 
+_C.ROID = CfgNode()
+
+_C.ROID.USE_WEIGHTING = True        # Whether to use loss weighting
+_C.ROID.USE_PRIOR_CORRECTION = True # Whether to use prior correction
+_C.ROID.USE_CONSISTENCY = True      # Whether to use consistency loss
+_C.ROID.MOMENTUM_SRC = 0.99         # Momentum for weight ensembling (param * model + (1-param) * model_src)
+_C.ROID.MOMENTUM_PROBS = 0.9        # Momentum for diversity weighting
+_C.ROID.TEMPERATURE = 1/3           # Temperature for weights
+
 _C.CUDNN = CfgNode()
 
 # Benchmark to select fastest CUDNN algorithms (best for fixed input sizes)

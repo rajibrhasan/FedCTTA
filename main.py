@@ -59,18 +59,22 @@ def main(severity, device):
                 client.set_state_dict(deepcopy(w_avg))
 
         elif cfg.MODEL.ADAPTATION == 'roid':
-            weights = torch.zeros(len(clients))
-            for i, client in enumerate(clients):
-                weights[i] = client.weights
-            
-            weights = weights.softmax(0)
-
             if t % 10 == 0:
-                print(f'Weights: {weights}')
-    
-            w_avg = FedAvg(w_locals, weights)
-            for client in clients:
-                client.set_state_dict(deepcopy(w_avg))
+                bn_params_list = [client.extract_bn_weights_and_biases() for client in clients]
+                similarity_mat = torch.zeros((len(bn_params_list), len(bn_params_list)))
+                for i, bn_params1 in enumerate(bn_params_list):
+                    for j, bn_params2 in enumerate(bn_params_list):
+                        similarity = cosine_similarity(bn_params1, bn_params2)
+                        similarity_mat[i,j] = similarity
+
+                similarity_mat = F.softmax(similarity_mat, dim = -1)
+
+                # if t % 10 == 0:
+                #     print(similarity_mat)
+                
+                for i in range(len(clients)):
+                    ww = FedAvg(w_locals, similarity_mat[i])
+                    clients[i].set_state_dict(deepcopy(ww))
 
     acc = 0
     for client in clients:
