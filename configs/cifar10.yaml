@@ -1,5 +1,6 @@
 MODEL:
   ARCH: "Standard"            # Model architecture: 'Standard', 'ResNet', etc.
+  NUM_CLASSES: 10             # Number of classes in the dataset
 
 CORRUPTION:
   DATASET: "cifar10"          # Dataset for evaluation: 'cifar10', 'cifar100'

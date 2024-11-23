@@ -32,6 +32,7 @@ _C.MODEL.ARCH = 'Standard'
 # - norm: test-time normalization
 # - tent: test-time entropy minimization (ours)
 _C.MODEL.ADAPTATION = 'ours'
+_C.MODEL.NUM_CLASSES = 10
 
 # By default tent is online, with updates persisting across batches.
 # To make adaptation episodic, and reset the model for each batch, choose True.
@@ -65,11 +66,6 @@ _C.OPTIM.NESTEROV = True
 # L2 regularization
 _C.OPTIM.WD = 0.0
 
-# COTTA
-_C.OPTIM.MT = 0.99
-_C.OPTIM.RST = 0.01
-_C.OPTIM.AP = 0.92
-
 # ----------------------------- Corruption options -------------------------- #
 _C.CORRUPTION = CfgNode()
 
@@ -92,6 +88,11 @@ _C.MISC.BATCH_SIZE = 100              # Batch size for each client
 _C.MISC.NUM_STEPS = 750              # Number of steps for each client
 _C.MISC.SPATIAL_H = 0.2
 _C.MISC.TEMPORAL_H = 0.02
+_C.MISC.IID = True
+
+_C.MISC.MOMENTUM_TEACHER = 0.999
+_C.MISC.MOMENTUM_PROBS = 0.9
+_C.MISC.TEMP = 1/3
 
 _C.MISC.RNG_SEED = 2
 _C.MISC.SAVE_DIR = "./output"
@@ -99,8 +100,6 @@ _C.MISC.DATA_DIR  =  "./data"
 _C.MISC.CKPT_DIR  = "./ckpt"
 _C.MISC.LOG_DEST = 'log.txt'
 _C.MISC.LOG_TIME = ''
-_C.MISC.MOMENTUM_SRC = 0.99
-_C.MISC.IID = True
 _C.MISC.KAGGLE = False
 
 _C.CUDNN = CfgNode()

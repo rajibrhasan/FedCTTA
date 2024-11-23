@@ -43,7 +43,6 @@ def main(severity, device):
     
     for t in tqdm(range(cfg.MISC.NUM_STEPS)):
         w_locals = []
-
         for idx, client in enumerate(clients):
             selected_domain = dataset[client_schedule[idx][t]]
             cur_idx = selected_domain['indices'][selected_domain['use_count']]
@@ -58,26 +57,15 @@ def main(severity, device):
             w_avg = FedAvg(w_locals)
             for client in clients:
                 client.set_state_dict(deepcopy(w_avg))
-        
-        elif cfg.MODEL.ADAPTATION == 'ours':
-            if t % 10 == 0:
-                bn_params_list = [client.extract_bn_weights_and_biases() for client in clients]
-                # feat_vec_list = [client.local_features for client in clients]
-                # pvec_list = [client.pvec for client in clients]
-                similarity_mat = torch.zeros((len(bn_params_list), len(bn_params_list)))
-                for i, bn_params1 in enumerate(bn_params_list):
-                    for j, bn_params2 in enumerate(bn_params_list):
-                        similarity = cosine_similarity(bn_params1, bn_params2)
-                        similarity_mat[i,j] = similarity
 
-                similarity_mat = F.softmax(similarity_mat, dim = -1)
+        elif cfg.MODEL.ADAPTATION == 'roid':
+            weights = torch.zeros(len(clients))
+            for i, client in enumerate(clients):
+                weights[i] = client.weights
+            w_avg = FedAvg(w_locals, weights)
+            for client in clients:
+                client.set_state_dict(deepcopy(w_avg))
 
-                # if t % 10 == 0:
-                #     print(similarity_mat)
-                
-                for i in range(len(clients)):
-                    ww = FedAvg(w_locals, similarity_mat[i])
-                    clients[i].set_state_dict(deepcopy(ww))
     acc = 0
     for client in clients:
         client_acc = sum(client.correct_preds_before_adapt) / sum(client.total_preds)*100
@@ -86,7 +74,6 @@ def main(severity, device):
 
     print(f'Global accuracy: {acc/len(clients) : 0.3f}')
     logger.info(f'Global accuracy: {acc/len(clients) : 0.3f}')
-
 
 if __name__ == '__main__':
     load_cfg_fom_args("CIFAR-10C Evaluation")
