@@ -64,6 +64,9 @@ def main(severity, device):
                 weights[i] = client.weights
             
             weights = weights.softmax(0)
+
+            if t % 10 == 0:
+                print(f'Weights: {weights}')
     
             w_avg = FedAvg(w_locals, weights)
             for client in clients:
