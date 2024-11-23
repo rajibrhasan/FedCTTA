@@ -42,11 +42,11 @@ class Client(object):
         if self.cfg.MODEL.ADAPTATION == 'roid':
             weights_div = 1 - F.cosine_similarity(self.class_probs_ema.unsqueeze(dim=0), outputs.softmax(1), dim=1)
             weights_div = (weights_div - weights_div.min()) / (weights_div.max() - weights_div.min())
+            print(outputs)
             # calculate certainty based weight
             weights_cert = - softmax_entropy(outputs)
             print(weights_cert)
             weights_cert = (weights_cert - weights_cert.min()) / (weights_cert.max() - weights_cert.min())
-            print(weights_cert)
 
             # calculate the final weights
             weights = torch.exp(weights_div * weights_cert / self.cfg.MISC.TEMP)
