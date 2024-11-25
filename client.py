@@ -40,6 +40,7 @@ class Client(object):
         self.optimizer = self.setup_optimizer() if len(self.params) > 0 else None
 
         self.correct_preds = []
+        self.correct_after = []
         self.total_preds = []
         self.domain_list = []
 
@@ -61,7 +62,6 @@ class Client(object):
         self.x = x
         self.y = y
         self.model.to(self.device)
-
         outputs = self.model(x.to(self.device))
 
         if self.use_weighting:
@@ -115,6 +115,7 @@ class Client(object):
         self.correct_preds.append(correct)
         self.total_preds.append(len(self.y))
 
+
     def setup_optimizer(self):
         """Set up optimizer for tent adaptation.
         For best results, try tuning the learning rate and batch size.
@@ -138,7 +139,7 @@ class Client(object):
     def configure_model(self):
         """Configure model."""
         # self.model.train()
-        self.model.eval()  # eval mode to avoid stochastic depth in swin. test-time normalization is still applied
+        self.model.train()  # eval mode to avoid stochastic depth in swin. test-time normalization is still applied
         # disable grad, to (re-)enable only what we update
         self.model.requires_grad_(False)
         # enable all trainable
@@ -156,30 +157,34 @@ class Client(object):
                 m.requires_grad_(True)
                 
     def collect_params(self):
-        """Collect the affine scale + shift parameters from normalization layers.
-        Walk the model's modules and collect all normalization parameters.
+        """Collect all trainable parameters.
+        Walk the model's modules and collect all parameters.
         Return the parameters and their names.
         Note: other choices of parameterization are possible!
         """
         params = []
         names = []
         for nm, m in self.model.named_modules():
-            if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm)):
-                for np, p in m.named_parameters():
-                    if np in ['weight', 'bias'] and p.requires_grad:
-                        params.append(p)
-                        names.append(f"{nm}.{np}")
+            for np, p in m.named_parameters():
+                if np in ['weight', 'bias'] and p.requires_grad:
+                    params.append(p)
+                    names.append(f"{nm}.{np}")
         return params, names
 
     def extract_bn_weights_and_biases(self):
         bn_params = {}
         for name, layer in self.model.named_modules():
-            if isinstance(layer, (nn.BatchNorm1d, nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm)):
-                gamma = layer.weight.data.cpu()  # Scale (weight)
-                beta = layer.bias.data.cpu()    # Offset (bias)
-                weights = torch.cat((gamma, beta), dim =0)
-                bn_params[name] = weights
-        return bn_params
+            for np, p in layer.named_parameters():
+                if np in ['weight', 'bias'] and p.requires_grad:
+                    bn_params[f"{name}.{np}"] = p.data.cpu()
+                    # params.append(p)
+                    # names.append(f"{nm}.{np}")
+                # gamma = layer.weight.data.cpu()  # Scale (weight)
+                # beta = layer.bias.data.cpu()    # Offset (bias)
+                # weights = torch.cat((gamma, beta), dim =0)
+                # bn_params[name] = weights
+        return deepcopy(bn_params)
+
 
     def get_state_dict(self):
         return self.model.state_dict()

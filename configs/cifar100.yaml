@@ -43,6 +43,8 @@ MISC:
   IID: True
   SPATIAL_H: 0.2
   TEMPORAL_H: 0.02
+  
+  
 
   RNG_SEED : 2
   SAVE_DIR : "./output"

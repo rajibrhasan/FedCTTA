@@ -100,7 +100,8 @@ _C.MISC.DATA_DIR  =  "./data"
 _C.MISC.CKPT_DIR  = "./ckpt"
 _C.MISC.LOG_DEST = 'log.txt'
 _C.MISC.LOG_TIME = ''
-_C.MISC.KAGGLE = False
+_C.MISC.USE_BN = False
+_C.MISC.TEMP = 0.01
 
 _C.ROID = CfgNode()
 
