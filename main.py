@@ -82,15 +82,15 @@ def main(severity, device):
             exp_scaled_similarity = np.exp(scaled_similarity - np.max(scaled_similarity, axis=1, keepdims=True))  # Subtract max for numerical stability
             # exp_scaled_similarity = np.exp(scaled_similarity)  # Subtract max for numerical stability
             normalized_similarity = exp_scaled_similarity / np.sum(exp_scaled_similarity, axis=1, keepdims=True)
-            if t  % 10 == 0:
-                print(normalized_similarity)
+            # if t  % 10 == 0:
+            #     print(normalized_similarity)
 
 
             # if t % 10 == 0:
             #     print(similarity_mat)
             
             for i in range(len(clients)):
-                ww = FedAvg(w_locals, normalized_similarity[i])
+                ww = FedAvg(w_locals, torch.tensor(normalized_similarity[i]))
                 clients[i].set_state_dict(deepcopy(ww))
 
 
