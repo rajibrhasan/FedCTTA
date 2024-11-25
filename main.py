@@ -73,7 +73,7 @@ def main(severity, device):
                 with torch.no_grad():
                     for i, ema_prob1 in enumerate(ema_prob_list):
                         for j, ema_prob2 in enumerate(ema_prob_list):
-                            similarity = F.cosine_similarity(ema_prob1.reshape(-1, 1), ema_prob2.reshape(-1,1))
+                            similarity = F.cosine_similarity(ema_prob1.reshape(1, -1), ema_prob2.reshape(1,-1))
                             similarity_mat[i,j] = similarity.item()
 
             
