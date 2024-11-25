@@ -63,16 +63,18 @@ def main(severity, device):
             
             if cfg.MISC.USE_BN:
                 bn_params_list = [client.extract_bn_weights_and_biases() for client in clients]
-                for i, bn_params1 in enumerate(bn_params_list):
-                    for j, bn_params2 in enumerate(bn_params_list):
-                        similarity = cosine_similarity(bn_params1, bn_params2)
-                        similarity_mat[i,j] = similarity
+                with torch.no_grad():
+                    for i, bn_params1 in enumerate(bn_params_list):
+                        for j, bn_params2 in enumerate(bn_params_list):
+                            similarity = cosine_similarity(bn_params1, bn_params2)
+                            similarity_mat[i,j] = similarity
             else:
                 ema_prob_list = [client.class_probs_ema for client in clients]
-                for i, ema_prob1 in enumerate(ema_prob_list):
-                    for j, ema_prob2 in enumerate(ema_prob_list):
-                        similarity = F.cosine_probability(ema_prob1, ema_prob2)
-                        similarity_mat[i,j] = similarity
+                with torch.no_grad():
+                    for i, ema_prob1 in enumerate(ema_prob_list):
+                        for j, ema_prob2 in enumerate(ema_prob_list):
+                            similarity = F.cosine_similarity(ema_prob1, ema_prob2)
+                            similarity_mat[i,j] = similarity.item()
 
             
             scaled_similarity = np.array(similarity_mat / cfg.MISC.TEMP)
@@ -90,7 +92,7 @@ def main(severity, device):
             for i in range(len(clients)):
                 ww = FedAvg(w_locals, normalized_similarity[i])
                 clients[i].set_state_dict(deepcopy(ww))
-                
+
 
     acc = 0
     for client in clients:
