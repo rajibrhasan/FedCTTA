@@ -32,10 +32,8 @@ def main(severity, device):
         clients.append(Client(f'client_{i}', deepcopy(global_model), cfg, device))
 
     if cfg.MISC.IID:
-        print('IID')
         client_schedule = create_schedule_iid(cfg.MISC.NUM_CLIENTS, cfg.MISC.NUM_STEPS, cfg.CORRUPTION.TYPE, cfg.MISC.TEMPORAL_H)
     else:
-        print('Non-IID')
         client_schedule = create_schedule_niid(cfg.MISC.NUM_CLIENTS, cfg.MISC.NUM_STEPS, cfg.CORRUPTION.TYPE, cfg.MISC.TEMPORAL_H, cfg.MISC.SPATIAL_H)
     
     # logger.info('Client schedule: \n')
