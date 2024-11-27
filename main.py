@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(severity, device):
-    print(f"===============================Dataset: {cfg.CORRUPTION.DATASET} || Batch Size: {cfg.FED.BATCH_SIZE} || Adaptation: {cfg.MODEL.ADAPTATION} || IID : {cfg.FED.IID} || ADAPT_ALL : {cfg.MISC.ADAPT_ALL} || Similarity : {cfg.MISC.SIMILARITY}===============================")
+    print(f"==================Dataset: {cfg.CORRUPTION.DATASET} || Batch Size: {cfg.FED.BATCH_SIZE} || Adaptation: {cfg.MODEL.ADAPTATION} || IID : {cfg.FED.IID} || ADAPT_ALL : {cfg.MISC.ADAPT_ALL} || Similarity : {cfg.MISC.SIMILARITY}==================")
     max_use_count = cfg.CORRUPTION.NUM_EX // cfg.FED.BATCH_SIZE 
     
     dataset = get_dataset(cfg, severity, cfg.CORRUPTION.DATASET)
@@ -83,22 +83,22 @@ def main(severity, device):
                         NotImplementedError(f"Similarity method {cfg.MISC.SIMILARITY} not implemented")
 
                 temperature = cfg.MISC.EMA_PROBS_TEMP if cfg.MISC.SIMILARITY == 'ema_probs' else cfg.MISC.TEMP
-                scaled_similarity = np.array(similarity_mat / temperature)
-                # Apply softmax to normalize the similarity values for aggregation
-                exp_scaled_similarity = np.exp(scaled_similarity - np.max(scaled_similarity, axis=1, keepdims=True))  # Subtract max for numerical stability
-                # exp_scaled_similarity = np.exp(scaled_similarity)  # Subtract max for numerical stability
-                normalized_similarity = exp_scaled_similarity / np.sum(exp_scaled_similarity, axis=1, keepdims=True)
-                
+                scaled_similarity = similarity_mat / temperature
+                normalized_similarity = F.softmax(scaled_similarity, dim = 1)
+                # # Apply softmax to normalize the similarity values for aggregation
+                # exp_scaled_similarity = np.exp(scaled_similarity - np.max(scaled_similarity, axis=1, keepdims=True))  # Subtract max for numerical stability
+                # # exp_scaled_similarity = np.exp(scaled_similarity)  # Subtract max for numerical stability
+                # normalized_similarity = exp_scaled_similarity / np.sum(exp_scaled_similarity, axis=1, keepdims=True)
                 # print(f'Timestep: {t} / {cfg.FED.NUM_STEPS}')
 
-                # if t  % 10 == 0:
-                #     print(f'Timestep: {t} || Similarity Matrix')
-                #     print(normalized_similarity)
+                if t % 5 == 0:
+                    print(f'Timestep: {t} || Similarity Matrix')
+                    print(normalized_similarity)
 
                 # wandb.log({"similarity_mat": similarity_mat})
                 
                 for i in range(len(clients)):
-                    ww = FedAvg(w_locals, torch.tensor(normalized_similarity[i]))
+                    ww = FedAvg(w_locals, normalized_similarity[i])
                     clients[i].set_state_dict(deepcopy(ww))
             
 
