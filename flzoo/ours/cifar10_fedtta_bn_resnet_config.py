@@ -24,7 +24,7 @@ exp_args = dict(
     ),
     client=dict(name='fedtta_client', client_num=20),
     server=dict(name='base_server'),
-    group=dict(name='fedgraph_group', aggregation_method='avg',
+    group=dict(name='fedavgm_group', aggregation_method='avg',
                aggregation_parameters=dict(
                    name='all',
                )),
@@ -53,7 +53,7 @@ exp_args = dict(
                loop=1,
                alpha = 0.9
                ),
-    method=dict(name = "local", #Ffedtsa or ours
+    method=dict(name = "fedavgm", #Ffedtsa or ours
                 feat_sim = "feature", #output or feature
                 data_used = "original"
             ),

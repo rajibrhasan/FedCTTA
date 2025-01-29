@@ -111,7 +111,7 @@ class TTAServerGroup(ParameterServerGroup):
                 w_time[k] = w_time[k].cuda()
             weight_list.append(w_time)
 
-        print(space_att)
+        # print(space_att)
         for cidx in range(client_num):
             w_space = copy.deepcopy(self.clients[cidx].model.state_dict())
             S_all = space_att.shape[0]
@@ -122,9 +122,13 @@ class TTAServerGroup(ParameterServerGroup):
                     else:
                         w_space[k] += space_att[cidx, sidx] * weight_list[sidx][k]
 
+            # for k in w_space.keys():
+            #     w_space[k] = 0.1 * w_space[k] + 0.9 * weight_list[cidx][k]
+            
             self.clients[cidx].model.load_state_dict(w_space)
 
     def aggregate_grad_ours(self, train_round, feature_indicator):
+
         # client_num = self.args.client.client_num
 
         # feature_indicator = torch.stack(feature_indicator, dim=0)
@@ -298,7 +302,7 @@ class TTAServerGroup(ParameterServerGroup):
             similarity_matrix = torch.mm(indicator, indicator.T)
             space_att = torch.softmax(similarity_matrix, dim = -1)
 
-        print(space_att)
+        # print(space_att)
 
         self.collaboration_graph.append(space_att)
         sum_mean, sum_var = self.st_agg_bn(space_att=space_att, global_mean=global_mean, wotime=True)

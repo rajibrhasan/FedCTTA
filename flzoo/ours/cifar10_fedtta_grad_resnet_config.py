@@ -2,6 +2,7 @@ from easydict import EasyDict
 import datetime
 import os
 import time
+import random
 
 now = int(time.time())
 
@@ -24,7 +25,7 @@ exp_args = dict(
     ),
     client=dict(name='fedpl_client', client_num=20),
     server=dict(name='base_server'),
-    group=dict(name='fedavgm_group', aggregation_method='avg',
+    group=dict(name='adapt_group', aggregation_method='st',
                aggregation_parameters=dict(
                    name='all',
                )),
@@ -53,18 +54,17 @@ exp_args = dict(
                loop=1,
                alpha = 0.9
                ),
-    method=dict(name = "ldawa", #Ffedtsa or ours
-                  feat_sim = "feature", #output or feature
-                  data_used = "original"
+    method=dict(name = "ours", #Ffedtsa or ours
+                feat_sim = "output", #output or feature
+                data_used = "random",
+                metric = 'euclid'
             ),
-
 )
 
 exp_args = EasyDict(exp_args)
-seed = 1000
-
+seed = 3
 iid_text = "niid" if exp_args.other.niid else "iid"
-file_name = f"{exp_args.method.name}_{exp_args.method.data_used}_{exp_args.method.feat_sim}_{exp_args.other.method}_{exp_args.client.name}_lp_{exp_args.other.loop}_seed{seed}_{now}"
+file_name = f"agg_freq_{exp_args.method.name}_{exp_args.method.data_used}_{exp_args.method.feat_sim}_{exp_args.other.method}_{exp_args.client.name}_lp_{exp_args.other.loop}_seed{seed}_{now}"
 exp_args.other.logging_path = os.path.join('logging', exp_args.data.dataset, "tta_"+exp_args.other.method, iid_text, file_name )
 print(exp_args.other.logging_path)
 

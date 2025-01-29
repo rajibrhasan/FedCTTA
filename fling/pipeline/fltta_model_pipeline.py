@@ -307,8 +307,7 @@ def FedTTA_Pipeline(args: dict, seed: int = 0) -> None:
                     for j in participated_clients:
                         # Collect test data
                         corupt = args.data.corruption[corupt_map[j][cidx]]
-                        # print(corupt)
-
+                
                         indexs = corrupt_test_sets[j][corupt][level].indexes[0:  args.other.ttt_batch]
                         dataset = corrupt_test_sets[j][corupt][level].tot_data
                         corrupt_test_sets[j][corupt][level].indexes = corrupt_test_sets[j][corupt][level].indexes[args.other.ttt_batch : ]
@@ -349,7 +348,7 @@ def FedTTA_Pipeline(args: dict, seed: int = 0) -> None:
                         global_feature_indicator.append(feature_indicator)
 
                     # Aggregate parameters in each client.
-                    if args.other.is_average :
+                    if args.other.is_average and cnt % 10 == 0 :
                         logger.logging('-' * 10 + ' Average ' + '-' * 10)
                         if args.other.method == 'bn':
                             if args.method.name == 'ours':
@@ -380,34 +379,34 @@ def FedTTA_Pipeline(args: dict, seed: int = 0) -> None:
                     # compute_average_differences(group)
                    
 
-                    if args.method.name == 'ours':
-                        diff_mode = 'diff'
+                    # if args.method.name == 'ours':
+                    #     diff_mode = 'diff'
 
-                        if args.method.feat_sim == 'feature':
-                            compute_differences(global_feature_indicator, 'Feature Mean', diff_mode)
+                    #     if args.method.feat_sim == 'feature':
+                    #         compute_differences(global_feature_indicator, 'Feature Mean', diff_mode)
 
-                        elif args.method.feat_sim == 'pvec':
-                            compute_differences(global_feature_indicator, 'Principal Vector', diff_mode)
+                    #     elif args.method.feat_sim == 'pvec':
+                    #         compute_differences(global_feature_indicator, 'Principal Vector', diff_mode)
                         
-                        elif args.method.feat_sim == 'output':
-                            compute_differences(global_feature_indicator, 'Output', diff_mode)
+                    #     elif args.method.feat_sim == 'output':
+                    #         compute_differences(global_feature_indicator, 'Output', diff_mode)
                         
-                        elif args.method.feat_sim == 'model':
-                            flattened_weights_list = []
-                            for client in group.clients:
-                                # Flatten and concatenate all parameters, detaching them from the computation graph
-                                client.model.requires_grad_(True)
-                                flattened_weights = torch.cat([param.view(-1).detach() for param in client.model.parameters() if param.requires_grad])
-                                flattened_weights_list.append(flattened_weights)
+                    #     elif args.method.feat_sim == 'model':
+                    #         flattened_weights_list = []
+                    #         for client in group.clients:
+                    #             # Flatten and concatenate all parameters, detaching them from the computation graph
+                    #             client.model.requires_grad_(True)
+                    #             flattened_weights = torch.cat([param.view(-1).detach() for param in client.model.parameters() if param.requires_grad])
+                    #             flattened_weights_list.append(flattened_weights)
                             
-                            compute_differences(flattened_weights_list, 'Model Weight', diff_mode)
+                    #         compute_differences(flattened_weights_list, 'Model Weight', diff_mode)
                         
-                        elif args.method.feat_sim == 'gradient':
-                            flattened_gradients_list = []
-                            for client in group.clients:
-                                flattened_gradients = torch.cat([param.grad.view(-1) for param in client.model.parameters() if param.grad is not None])
-                                flattened_gradients_list.append(flattened_gradients)
-                            compute_differences(flattened_gradients_list, 'Gradient', diff_mode)
+                    #     elif args.method.feat_sim == 'gradient':
+                    #         flattened_gradients_list = []
+                    #         for client in group.clients:
+                    #             flattened_gradients = torch.cat([param.grad.view(-1) for param in client.model.parameters() if param.grad is not None])
+                    #             flattened_gradients_list.append(flattened_gradients)
+                    #         compute_differences(flattened_gradients_list, 'Gradient', diff_mode)
 
                     
                     # tsne_plot(group, participated_clients, args.other.logging_path)
