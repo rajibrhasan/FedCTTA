@@ -348,7 +348,7 @@ def FedTTA_Pipeline(args: dict, seed: int = 0) -> None:
                         global_feature_indicator.append(feature_indicator)
 
                     # Aggregate parameters in each client.
-                    if args.other.is_average and cnt % 10 == 0 :
+                    if args.other.is_average:
                         logger.logging('-' * 10 + ' Average ' + '-' * 10)
                         if args.other.method == 'bn':
                             if args.method.name == 'ours':
@@ -379,8 +379,8 @@ def FedTTA_Pipeline(args: dict, seed: int = 0) -> None:
                     # compute_average_differences(group)
                    
 
-                    # if args.method.name == 'ours':
-                    #     diff_mode = 'diff'
+                    if args.method.name == 'ours':
+                        diff_mode = 'diff'
 
                     #     if args.method.feat_sim == 'feature':
                     #         compute_differences(global_feature_indicator, 'Feature Mean', diff_mode)
@@ -391,16 +391,16 @@ def FedTTA_Pipeline(args: dict, seed: int = 0) -> None:
                     #     elif args.method.feat_sim == 'output':
                     #         compute_differences(global_feature_indicator, 'Output', diff_mode)
                         
-                    #     elif args.method.feat_sim == 'model':
-                    #         flattened_weights_list = []
-                    #         for client in group.clients:
-                    #             # Flatten and concatenate all parameters, detaching them from the computation graph
-                    #             client.model.requires_grad_(True)
-                    #             flattened_weights = torch.cat([param.view(-1).detach() for param in client.model.parameters() if param.requires_grad])
-                    #             flattened_weights_list.append(flattened_weights)
-                            
-                    #         compute_differences(flattened_weights_list, 'Model Weight', diff_mode)
+                    #     
+                        flattened_weights_list = []
+                        for client in group.clients:
+                            # Flatten and concatenate all parameters, detaching them from the computation graph
+                            client.model.requires_grad_(True)
+                            flattened_weights = torch.cat([param.view(-1).detach() for param in client.model.parameters() if param.requires_grad])
+                            flattened_weights_list.append(flattened_weights)
                         
+                        compute_differences(flattened_weights_list, 'Model Weight', diff_mode)
+                    
                     #     elif args.method.feat_sim == 'gradient':
                     #         flattened_gradients_list = []
                     #         for client in group.clients:

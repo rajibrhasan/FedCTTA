@@ -38,7 +38,7 @@ exp_args = dict(
                ttt_batch=10,
                is_continue=True,
                niid=True,
-               is_average= True,
+               is_average= False,
                method='adapt',
                pre_trained='cifarresnext',
                resume=True,
@@ -65,7 +65,7 @@ exp_args = EasyDict(exp_args)
 seed = 100
 
 iid_text = "niid" if exp_args.other.niid else "iid"
-file_name = f"agg_freq_10_{exp_args.method.name}_{exp_args.method.data_used}_{exp_args.method.feat_sim}_{exp_args.client.name}_lp_{exp_args.other.loop}_seed{seed}_{now}"
+file_name = f"local_{exp_args.method.name}_{exp_args.method.data_used}_{exp_args.method.feat_sim}_{exp_args.client.name}_lp_{exp_args.other.loop}_seed{seed}_{now}"
 exp_args.other.logging_path = os.path.join('logging', exp_args.data.dataset, "tta_"+exp_args.other.method, iid_text, file_name )
 print(exp_args.other.logging_path)
 

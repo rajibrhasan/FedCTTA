@@ -179,8 +179,37 @@ class TTAServerGroup(ParameterServerGroup):
             normalized_indicator = F.normalize(indicator, p=2, dim=1)
             # Compute cosine similarity by multiplying the tensor with its transpose
             similarity_matrix = torch.mm(normalized_indicator, normalized_indicator.T)
+            similarity_matrix = torch.exp(similarity_matrix)
             space_att = torch.softmax(similarity_matrix, dim = -1)
 
+        elif self.args.method.metric == 'kl_div':
+            P = F.softmax(indicator, dim=-1)  # Shape: (N, D)
+
+            # Compute log probabilities for KL divergence
+            log_P = torch.log(P + 1e-10)  # Avoid log(0)
+
+            # Compute pairwise KL divergence using matrix multiplication
+            # KL(P || Q) = sum(P * (log P - log Q))
+            # We use broadcasting to compute log_Q for all pairs efficiently
+            log_Q = log_P.unsqueeze(0)  # Shape: (1, N, D)
+            kl_divergence = (P.unsqueeze(1) * (log_P.unsqueeze(1) - log_Q)).sum(dim=-1)  # Shape: (N, N)
+
+            # Convert KL divergence to similarity score
+            similarity_matrix = torch.exp(-kl_divergence)
+            space_att = torch.softmax(similarity_matrix, dim = -1)
+
+        elif self.args.method.metric == 'cross_entropy':
+            P = F.softmax(logits, dim=-1)  # Shape: (N, D)
+            log_P = torch.log(P + 1e-10)   # Log probabilities for numerical stability
+
+            # Compute pairwise cross-entropy loss
+            # CE(P || Q) = - sum(P * log(Q)), computed efficiently with broadcasting
+            log_Q = log_P.unsqueeze(0)  # Shape: (1, N, D)
+            ce_loss = -(P.unsqueeze(1) * log_Q).sum(dim=-1)  # Shape: (N, N)
+
+            # Convert CE loss to similarity score (lower CE -> higher similarity)
+            similarity_matrix = torch.exp(-ce_loss) 
+            space_att = torch.softmax(similarity_matrix, dim = -1)
 
 
         self.st_agg_grad(space_att, space_att)
